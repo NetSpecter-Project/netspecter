@@ -1,6 +1,26 @@
 #!/bin/sh
 set -eu
 
+clear
+cat << "EOF"
+
+:: NETSPECTER CORE INITIALIZING ::
+:: LOADING ROUTING ENGINE ::
+:: LOADING NETWORK MODULES ::
+:: SYSTEM READY ::
+
+ _   _      _   ____                  _
+| \ | | ___| |_|/ ___| _ __   ___  ___| |_ ___ _ __
+|  \| |/ _ \ __|\___ \| '_ \ / _ \/ __| __/ _ \ '__|
+| |\  |  __/ |_  ___) | |_) |  __/ (__| ||  __/ |
+|_| \_|\___|\__||____/| .__/ \___|\___|\__\___|_|
+                      |_|
+
+        NetSpecter :: Lightweight VPN routing for OpenWrt
+                    Developer: xxkxail
+
+EOF
+
 ORG="NetSpecter-Project"
 REPO="netspecter"
 VERSION="latest"
