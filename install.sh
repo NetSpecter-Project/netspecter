@@ -23,8 +23,6 @@ EOF
 
 ORG="NetSpecter-Project"
 REPO="netspecter"
-VERSION="latest"
-BASE="https://github.com/${ORG}/${REPO}/releases/${VERSION}/download"
 TMPDIR="/tmp/netspecter-install"
 
 mkdir -p "$TMPDIR"
@@ -38,34 +36,45 @@ read -r LANG_CHOICE
 NS_LANG="ru"
 [ "${LANG_CHOICE:-1}" = "2" ] && NS_LANG="en"
 
-printf 'Включить ночной перезапуск для очистки кэша и DNS? [1=Да,2=Нет] / Enable nightly restart to clear cache and DNS? [1=Yes,2=No]: '
+printf 'Включить ночной перезапуск? [1=Да,2=Нет] / Enable nightly restart? [1=Yes,2=No]: '
 read -r NIGHT_CHOICE
 NS_NIGHTLY="0"
 [ "${NIGHT_CHOICE:-2}" = "1" ] && NS_NIGHTLY="1"
 
+echo "📦 Обновление системы и установка зависимостей..."
 opkg update
-opkg install python3-light python3-json python3-urllib sing-box luci-base rpcd uci dnsmasq-full ca-bundle wget-ssl || \
-opkg install python3 sing-box luci-base rpcd uci dnsmasq-full ca-bundle wget-ssl
+opkg install curl sing-box luci-base rpcd uci dnsmasq-full ca-bundle kmod-tun kmod-nft-tproxy
 
-wget -O "$TMPDIR/netspecter.ipk" "$BASE/netspecter_1.1.0-1_all.ipk"
-wget -O "$TMPDIR/luci-app-netspecter.ipk" "$BASE/luci-app-netspecter_1.1.0-1_all.ipk"
+# Автоматический поиск последней версии APK через GitHub API
+echo "🔍 Поиск последней версии NetSpecter..."
+URLS=$(curl -s https://api.github.com/repos/${ORG}/${REPO}/releases/latest | grep "browser_download_url" | cut -d '"' -f 4)
+DOWNLOAD_URL=$(echo "$URLS" | grep "_all.apk" | head -n 1)
 
-opkg install "$TMPDIR/netspecter.ipk" "$TMPDIR/luci-app-netspecter.ipk"
+if [ -z "$DOWNLOAD_URL" ]; then
+    echo "❌ Ошибка: Не удалось найти файл .apk в релизах GitHub!"
+    exit 1
+fi
 
+echo "📥 Загрузка: $DOWNLOAD_URL"
+curl -L -o "$TMPDIR/netspecter.apk" "$DOWNLOAD_URL"
+
+echo "⚙️ Установка пакета..."
+opkg install "$TMPDIR/netspecter.apk"
+
+# Настройка UCI
 uci set netspecter.main.language="$NS_LANG"
 uci set netspecter.main.nightly_restart="$NS_NIGHTLY"
 uci commit netspecter
 
+# Запуск службы
 if [ -x /etc/init.d/netspecter ]; then
   /etc/init.d/netspecter enable || true
   /etc/init.d/netspecter restart || true
 fi
 
 echo ""
-echo "NetSpecter installed successfully"
-echo "NetSpecter успешно установлен"
-echo ""
-echo "Open LuCI / Откройте LuCI:"
-echo "Services -> NetSpecter"
-echo ""
-echo "Приятного пользования / Enjoy"
+echo "================================================="
+echo "  NetSpecter успешно установлен / Success!"
+echo "  Разработчик: xxkxail"
+echo "  Доступ: Службы -> NetSpecter"
+echo "================================================="
